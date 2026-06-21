@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crashloop-missing-env
+  namespace: cloudops-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: crashloop-missing-env
+  template:
+    metadata:
+      labels:
+        app: crashloop-missing-env
+    spec:
+      containers:
+        - name: app
+          image: busybox:1.36
+          command: ["sh", "-c"]
+          args:
+            - 'test -n "$DATABASE_URL" || { echo "startup error: required DATABASE_URL environment variable is missing"; exit 1; }'

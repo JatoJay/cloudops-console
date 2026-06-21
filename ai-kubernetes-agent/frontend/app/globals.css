@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  background: #fbfcfa;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  background: #fbfcfa;
+}
+
+body {
+  margin: 0;
+  font-family: "Manrope Variable", ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button {
+  font: inherit;
+}
+
+.console-shell {
+  position: relative;
+  isolation: isolate;
+}
+
+.console-shell::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background-image: url("/assets/contour-field.png");
+  background-position: center right;
+  background-repeat: no-repeat;
+  background-size: cover;
+  content: "";
+  opacity: 0.9;
+}
+
+@media (max-width: 767px) {
+  .console-shell::before {
+    background-position: 62% center;
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

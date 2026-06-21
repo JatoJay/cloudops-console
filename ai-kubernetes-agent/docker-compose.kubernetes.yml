@@ -1,0 +1,6 @@
+services:
+  backend:
+    environment:
+      KUBECONFIG_PATH: /home/app/.kube/config
+    volumes:
+      - ${HOST_KUBECONFIG_DIR:?Set HOST_KUBECONFIG_DIR to a directory containing a config file}:/home/app/.kube:ro

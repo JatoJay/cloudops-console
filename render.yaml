@@ -1,0 +1,56 @@
+services:
+  - type: web
+    name: cloudops-console-api-jatojay
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./ai-kubernetes-agent/backend/Dockerfile
+    dockerContext: ./ai-kubernetes-agent/backend
+    dockerCommand: /bin/sh -c "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      - key: INSFORGE_URL
+        value: https://9nq78xqg.eu-central.insforge.app
+      - key: INSFORGE_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_MODEL
+        sync: false
+      - key: COST_ANALYSIS_MODEL
+        value: openai/gpt-4o
+      - key: PUBLIC_API_URL
+        value: https://cloudops-console-api-jatojay.onrender.com
+      - key: CORS_ORIGINS
+        value: https://cloudops-console-jatojay.onrender.com
+
+  - type: web
+    name: cloudops-console-jatojay
+    runtime: node
+    plan: free
+    region: frankfurt
+    rootDir: ai-kubernetes-agent/frontend
+    buildCommand: npm ci && npm run build
+    startCommand: npm start -- --hostname 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_VERSION
+        value: 22.14.0
+      - key: BACKEND_INTERNAL_URL
+        value: https://cloudops-console-api-jatojay.onrender.com
+      - key: NEXT_PUBLIC_API_BASE_URL
+        value: https://cloudops-console-api-jatojay.onrender.com
+      - key: NEXT_PUBLIC_BACKEND_WS_URL
+        value: wss://cloudops-console-api-jatojay.onrender.com
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://cloudops-console-jatojay.onrender.com
+      - key: NEXT_PUBLIC_INSFORGE_URL
+        value: https://9nq78xqg.eu-central.insforge.app
+      - key: NEXT_PUBLIC_INSFORGE_ANON_KEY
+        sync: false

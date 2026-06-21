@@ -1,0 +1,23 @@
+# Environment files
+.env
+.kubeconfig.docker
+.kube-docker/
+.env.local
+backend/.env
+frontend/.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
+# Node / Next.js
+node_modules/
+.next/
+npm-debug.log*
+
+# OS and editor files
+.DS_Store
+.idea/
+.vscode/

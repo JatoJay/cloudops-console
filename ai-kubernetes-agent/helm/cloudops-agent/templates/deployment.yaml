@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "cloudops-agent.fullname" . }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "cloudops-agent.name" . }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "cloudops-agent.name" . }}
+    spec:
+      serviceAccountName: {{ include "cloudops-agent.fullname" . }}
+      automountServiceAccountToken: true
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: agent
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["python", "-m", "app.cluster_agent"]
+          env:
+            - name: CONTROL_PLANE_URL
+              value: {{ .Values.controlPlaneUrl | quote }}
+            - name: CLUSTER_NAME
+              value: {{ default .Release.Name .Values.clusterName | quote }}
+            - name: PAIRING_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cloudops-agent.fullname" . }}
+                  key: pairing-token
+            - name: KUBECONFIG_PATH
+              value: /tmp/cloudops-kubeconfig
+            - name: TRIVY_CACHE_DIR
+              value: /cache/trivy
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: cache
+              mountPath: /cache
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: cache
+          emptyDir: {}

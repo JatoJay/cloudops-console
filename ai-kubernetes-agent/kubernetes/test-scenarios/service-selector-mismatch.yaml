@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: selector-target
+  namespace: cloudops-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: selector-target
+  template:
+    metadata:
+      labels:
+        app: selector-target
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.27-alpine
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: selector-mismatch
+  namespace: cloudops-test
+spec:
+  selector:
+    app: wrong-label
+  ports:
+    - port: 80
+      targetPort: 80

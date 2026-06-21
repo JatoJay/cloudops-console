@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: memory-limit
+  namespace: cloudops-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: memory-limit
+  template:
+    metadata:
+      labels:
+        app: memory-limit
+    spec:
+      containers:
+        - name: stress
+          image: polinux/stress:1.0.4
+          command: ["stress"]
+          args: ["--vm", "1", "--vm-bytes", "64M", "--vm-hang", "1"]
+          resources:
+            requests:
+              memory: 8Mi
+            limits:
+              memory: 16Mi

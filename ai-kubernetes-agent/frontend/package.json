@@ -1,0 +1,36 @@
+{
+  "name": "cloudops-console-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@fontsource-variable/manrope": "^5.2.5",
+    "@fontsource/ibm-plex-mono": "^5.2.5",
+    "@insforge/sdk": "^1.4.2",
+    "@phosphor-icons/react": "^2.1.10",
+    "@tanstack/react-query": "^5.74.4",
+    "axios": "^1.8.4",
+    "next": "16.2.9",
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.2",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9.22.0",
+    "eslint-config-next": "16.2.9",
+    "postcss": "8.5.10",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.8.2"
+  },
+  "overrides": {
+    "postcss": "8.5.10"
+  }
+}

@@ -1,0 +1,9 @@
+[project]
+name = "cloudops-console-backend"
+version = "0.1.0"
+description = "FastAPI orchestration service for cloud operations, security, and cost analysis."
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
