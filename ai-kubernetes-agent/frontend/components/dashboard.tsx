@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, CheckCircle, ShieldWarning, WarningCircle } from "@phosphor-icons/react";
+import { ArrowLeft, CheckCircle, PlugsConnected, ShieldWarning, WarningCircle } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -31,7 +31,12 @@ export function Dashboard({ userId }: { userId: string }) {
             <h1 className="mt-4 max-w-3xl text-5xl font-extrabold leading-[1.02] tracking-[-0.055em] sm:text-7xl">Find the failure signal.</h1>
             <p className="mt-6 max-w-xl text-lg leading-8 text-muted">Collect cluster evidence, correlate the symptoms, and return a reviewable Kubernetes fix.</p>
             <div className="mt-8 max-w-xl border-l-2 border-action bg-white/70 px-5 py-4">
-              <label htmlFor="cluster-context" className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">Kubernetes cluster</label>
+              <div className="flex items-center justify-between gap-4">
+                <label htmlFor="cluster-context" className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">Kubernetes cluster</label>
+                <Link href="/kubernetes/connect" className="inline-flex items-center gap-2 text-xs font-bold text-action">
+                  <PlugsConnected size={15} /> Connect cluster
+                </Link>
+              </div>
               <select
                 id="cluster-context"
                 value={activeContext}

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChartLineUp, ClockCounterClockwise, Gauge, PlugsConnected, SignOut, Stack } from "@phosphor-icons/react";
+import { ChartLineUp, ClockCounterClockwise, Gauge, SignOut, Stack } from "@phosphor-icons/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
@@ -17,14 +17,10 @@ export function AppShell({
   const historyHref = pathname.startsWith("/kubernetes")
     ? "/kubernetes/history"
     : "/cost-analysis/history";
-  const connectionsHref = pathname.startsWith("/kubernetes")
-    ? "/kubernetes/connect"
-    : "/cost-analysis/connect";
   const nav = [
     { href: "/", label: "Home", icon: Gauge },
     { href: "/cost-analysis", label: "Cost Analyzer", icon: ChartLineUp },
     { href: "/kubernetes", label: "Kubernetes", icon: Stack },
-    { href: connectionsHref, label: "Connections", icon: PlugsConnected },
     { href: historyHref, label: "History", icon: ClockCounterClockwise },
   ];
 
@@ -47,7 +43,7 @@ export function AppShell({
           </Link>
           <nav className="flex items-center gap-1" aria-label="Primary navigation">
             {nav.map(({ href, label, icon: Icon }) => {
-              const active = label === "History" || label === "Connections"
+              const active = label === "History"
                 ? pathname === href
                 : href === "/"
                   ? pathname === "/"
