@@ -6,7 +6,6 @@ services:
     region: frankfurt
     dockerfilePath: ./ai-kubernetes-agent/backend/Dockerfile
     dockerContext: ./ai-kubernetes-agent/backend
-    dockerCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     autoDeployTrigger: commit
     envVars:
