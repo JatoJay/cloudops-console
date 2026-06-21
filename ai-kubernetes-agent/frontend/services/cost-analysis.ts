@@ -16,10 +16,12 @@ export async function getAnalysisHistory(): Promise<AnalysisHistoryItem[]> {
 }
 
 export async function runCostAnalysis({
-  resourceGroup,
+  projectId,
+  connectionId,
   onProgress,
 }: {
-  resourceGroup: string;
+  projectId: string;
+  connectionId: string;
   onProgress: (message: string) => void;
 }): Promise<CostAnalysisResponse> {
   const analysisId = crypto.randomUUID();
@@ -30,7 +32,12 @@ export async function runCostAnalysis({
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ analysis_id: analysisId, resource_group: resourceGroup }),
+    body: JSON.stringify({
+      analysis_id: analysisId,
+      resource_group: projectId,
+      project_id: projectId,
+      connection_id: connectionId,
+    }),
   });
   const socket = new WebSocket(progressSocketUrl(analysisId), ["bearer", accessToken]);
   socket.addEventListener("message", (event) => onProgress(String(event.data)));

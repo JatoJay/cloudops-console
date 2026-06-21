@@ -15,6 +15,7 @@ from app.models.auth import AuthContext
 from app.models.cost_analysis import CostAnalysis
 from app.services.analyses import get_analysis_store
 from app.services.insforge import require_auth_context, require_websocket_auth
+from app.services.cluster_agents import get_cluster_agent_store
 
 
 ANALYSIS = {
@@ -203,11 +204,19 @@ def test_history_returns_authenticated_users_analyses() -> None:
 
 
 def test_resource_groups_returns_provider_scan_boundaries() -> None:
-    class Scanner:
-        def resource_groups(self) -> list[str]:
-            return ["finops-production", "finops-staging"]
+    class AgentStore:
+        async def list_clusters(self, provider: str) -> list[dict[str, Any]]:
+            assert provider == "gcp"
+            return [{
+                "id": str(uuid4()),
+                "status": "online",
+                "metadata": {"projects": [
+                    {"project_id": "finops-production", "display_name": "Production"},
+                    {"project_id": "finops-staging", "display_name": "Staging"},
+                ]},
+            }]
 
-    app.dependency_overrides[get_cloud_scanner] = Scanner
+    app.dependency_overrides[get_cluster_agent_store] = AgentStore
     app.dependency_overrides[require_auth_context] = lambda: AuthContext(
         user_id=uuid4(), access_token="token"
     )
@@ -218,9 +227,8 @@ def test_resource_groups_returns_provider_scan_boundaries() -> None:
         app.dependency_overrides.clear()
 
     assert response.status_code == 200
-    assert response.json() == {
-        "resource_groups": ["finops-production", "finops-staging"]
-    }
+    assert response.json()["resource_groups"] == ["finops-production", "finops-staging"]
+    assert response.json()["projects"][0]["display_name"] == "Production"
 
 
 def test_progress_websocket_replays_messages_in_order() -> None:
@@ -228,7 +236,7 @@ def test_progress_websocket_replays_messages_in_order() -> None:
 
     analysis_id = uuid4()
     messages = [
-        "Fetching resource groups...",
+        "Fetching cloud projects...",
         "Scanning resources in test-project...",
         "Analyzing costs with AI...",
         "Storing results...",

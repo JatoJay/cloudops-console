@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 class PairingTokenRequest(BaseModel):
     cluster_name: str = Field(min_length=1, max_length=120)
+    provider: Literal["kubernetes", "gcp"] = "kubernetes"
 
 
 class PairingTokenResponse(BaseModel):
@@ -19,6 +20,7 @@ class PairingTokenResponse(BaseModel):
 class AgentPairRequest(BaseModel):
     token: str = Field(min_length=32)
     cluster_name: str = Field(min_length=1, max_length=120)
+    provider: Literal["kubernetes", "gcp"] = "kubernetes"
 
 
 class AgentPairResponse(BaseModel):
@@ -26,7 +28,7 @@ class AgentPairResponse(BaseModel):
 
 
 class ClusterJobRequest(BaseModel):
-    job_type: Literal["investigate", "vulnerability_scan"]
+    job_type: Literal["investigate", "vulnerability_scan", "cloud_cost_analysis"]
     payload: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -35,6 +37,7 @@ class ConnectedCluster(BaseModel):
     name: str
     provider: str
     status: str
+    metadata: dict[str, Any] = Field(default_factory=dict)
     last_seen: datetime | None = None
     created_at: datetime
 
@@ -50,3 +53,15 @@ class ClusterJob(BaseModel):
     error: str | None = None
     created_at: datetime
     updated_at: datetime
+
+
+class CloudProject(BaseModel):
+    connection_id: UUID
+    project_id: str
+    display_name: str
+    lifecycle_state: str = "ACTIVE"
+
+
+class CloudConnectionsResponse(BaseModel):
+    connections: list[ConnectedCluster]
+    projects: list[CloudProject]

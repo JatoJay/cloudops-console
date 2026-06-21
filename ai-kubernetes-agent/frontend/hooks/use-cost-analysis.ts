@@ -21,10 +21,11 @@ export function useCostAnalysis(userId: string) {
     queryFn: getAnalysisHistory,
   });
   const analysis = useMutation({
-    mutationFn: (resourceGroup: string) => {
-      if (!resourceGroup) throw new Error("Select a cloud resource group before running analysis");
+    mutationFn: ({ projectId, connectionId }: { projectId: string; connectionId: string }) => {
+      if (!projectId || !connectionId) throw new Error("Select a connected Google Cloud project before running analysis");
       return runCostAnalysis({
-        resourceGroup,
+        projectId,
+        connectionId,
         onProgress: (message) => setProgress((current) => [...current, message]),
       });
     },

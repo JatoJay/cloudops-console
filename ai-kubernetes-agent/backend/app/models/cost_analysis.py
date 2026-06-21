@@ -44,6 +44,8 @@ class CostAnalysis(BaseModel):
 class AnalyzeRequest(BaseModel):
     analysis_id: UUID = Field(default_factory=uuid4)
     resource_group: str | None = None
+    connection_id: UUID | None = None
+    project_id: str | None = None
 
 
 class CostAnalysisResponse(CostAnalysis):

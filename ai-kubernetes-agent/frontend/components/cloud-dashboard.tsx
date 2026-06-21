@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, CloudArrowDown, Sparkle, WarningCircle } from "@phosphor-icons/react";
+import { ArrowLeft, ArrowRight, CloudArrowDown, PlugsConnected, Sparkle, WarningCircle } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -8,9 +8,14 @@ import { CostProgress } from "@/components/cost-progress";
 import { useCostAnalysis } from "@/hooks/use-cost-analysis";
 
 export function CloudDashboard({ userId }: { userId: string }) {
-  const [selectedGroup, setSelectedGroup] = useState("");
+  const [selectedProject, setSelectedProject] = useState("");
   const { resourceGroups, history, analysis, progress } = useCostAnalysis(userId);
-  const activeGroup = selectedGroup || resourceGroups.data?.resource_groups[0] || "";
+  const activeValue = selectedProject || (resourceGroups.data?.projects[0]
+    ? `${resourceGroups.data.projects[0].connection_id}:${resourceGroups.data.projects[0].project_id}`
+    : "");
+  const activeProject = resourceGroups.data?.projects.find(
+    (project) => `${project.connection_id}:${project.project_id}` === activeValue,
+  );
 
   const lastRun = history.data?.[0];
 
@@ -21,32 +26,33 @@ export function CloudDashboard({ userId }: { userId: string }) {
         <div className="flex flex-col justify-center">
           <p className="font-mono text-xs uppercase tracking-[0.18em] text-action">GCP cost analysis</p>
           <h1 className="mt-4 max-w-3xl text-5xl font-extrabold leading-[1.01] tracking-[-0.06em] sm:text-7xl">Find the spend hiding in plain sight.</h1>
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-muted">Scan a cloud resource group, surface waste and pricing mismatches, then leave with commands your team can review and run.</p>
+          <p className="mt-6 max-w-2xl text-lg leading-8 text-muted">Scan a connected Google Cloud project, surface waste and pricing mismatches, then leave with commands your team can review and run.</p>
 
           <div className="mt-9 max-w-2xl border-l-2 border-action bg-white/80 px-5 py-5 sm:px-6">
-            <label htmlFor="resource-group" className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">Cloud resource group</label>
+            <div className="flex items-center justify-between gap-4"><label htmlFor="resource-group" className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">Google Cloud project</label><Link href="/cost-analysis/connect" className="inline-flex items-center gap-2 text-xs font-bold text-action"><PlugsConnected size={15} /> Connect cloud</Link></div>
             <div className="mt-2 flex flex-col gap-3 sm:flex-row">
               <select
                 id="resource-group"
-                value={activeGroup}
-                onChange={(event) => setSelectedGroup(event.target.value)}
+                value={activeValue}
+                onChange={(event) => setSelectedProject(event.target.value)}
                 disabled={resourceGroups.isLoading || analysis.isPending}
                 className="h-14 min-w-0 flex-1 border border-line bg-white px-4 font-bold text-ink outline-none focus:border-action focus:ring-4 focus:ring-action/10 disabled:text-muted"
               >
-                {!resourceGroups.data?.resource_groups.length ? <option value="">No resource groups available</option> : null}
-                {resourceGroups.data?.resource_groups.map((group) => <option key={group} value={group}>{group}</option>)}
+                {!resourceGroups.data?.projects.length ? <option value="">No connected projects</option> : null}
+                {resourceGroups.data?.projects.map((project) => <option key={`${project.connection_id}:${project.project_id}`} value={`${project.connection_id}:${project.project_id}`}>{project.display_name} ({project.project_id}){project.status !== "online" ? " — connector offline" : ""}</option>)}
               </select>
               <button
                 type="button"
-                disabled={!activeGroup || analysis.isPending}
-                onClick={() => analysis.mutate(activeGroup)}
+                disabled={!activeProject || activeProject.status !== "online" || analysis.isPending}
+                onClick={() => activeProject && analysis.mutate({ projectId: activeProject.project_id, connectionId: activeProject.connection_id })}
                 className="inline-flex min-h-14 items-center justify-center gap-3 bg-action px-7 font-extrabold text-white transition hover:bg-[#075bd9] focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-action/30 disabled:cursor-wait disabled:opacity-55"
               >
                 {analysis.isPending ? "Analyzing…" : "Run Analysis"}
                 {!analysis.isPending ? <ArrowRight size={19} weight="bold" /> : null}
               </button>
             </div>
-            {resourceGroups.isError ? <p className="mt-3 text-sm font-medium text-red-700">Could not load cloud resource groups. Check the active GCP project and try again.</p> : null}
+            {resourceGroups.isError ? <p className="mt-3 text-sm font-medium text-red-700">Could not load connected Google Cloud projects.</p> : null}
+            {!resourceGroups.isLoading && !resourceGroups.data?.projects.length ? <p className="mt-3 text-sm text-muted">Connect a local or Cloud Shell agent to make your GCP projects available without sharing credentials.</p> : null}
           </div>
 
           {analysis.isError ? (

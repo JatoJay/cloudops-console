@@ -1,3 +1,4 @@
+import asyncio
 from typing import Annotated
 from uuid import UUID
 
@@ -17,6 +18,7 @@ from app.models.cost_analysis import (
 from app.services.analyses import AnalysisStore, get_analysis_store
 from app.services.insforge import require_auth_context, require_websocket_auth
 from app.services.progress import progress_broker
+from app.services.cluster_agents import ClusterAgentStore, agent_connections, get_cluster_agent_store
 
 router = APIRouter(prefix="/api", tags=["cost-analysis"])
 progress_router = APIRouter(tags=["cost-analysis-progress"])
@@ -28,25 +30,64 @@ async def analyze_cloud_costs(
     analyzer: Annotated[AIAnalyzer, Depends(get_ai_analyzer)],
     auth: Annotated[AuthContext, Depends(require_auth_context)],
     store: Annotated[AnalysisStore, Depends(get_analysis_store)],
+    agent_store: Annotated[ClusterAgentStore, Depends(get_cluster_agent_store)],
     request: AnalyzeRequest | None = None,
 ) -> CostAnalysisResponse:
     """Scan cloud resources first, then produce a structured AI cost analysis."""
     request = request or AnalyzeRequest()
-    await progress_broker.publish(request.analysis_id, "Fetching resource groups...")
-    try:
-        resource_groups = (
-            [request.resource_group]
-            if request.resource_group
-            else await run_in_threadpool(scanner.resource_groups)
+    await progress_broker.publish(request.analysis_id, "Fetching cloud projects...")
+    if request.connection_id:
+        if not request.project_id:
+            raise HTTPException(status_code=422, detail="Select a connected Google Cloud project")
+        connection = await agent_store.get_connection(request.connection_id, "gcp")
+        if connection["status"] != "online":
+            raise HTTPException(status_code=409, detail="The Google Cloud connector is offline")
+        available_projects = {
+            item.get("project_id") for item in connection.get("metadata", {}).get("projects", [])
+        }
+        if request.project_id not in available_projects:
+            raise HTTPException(status_code=403, detail="The selected project is not available through this connector")
+        resource_groups = [request.project_id]
+        await progress_broker.publish(
+            request.analysis_id, f"Scanning resources in {request.project_id}..."
         )
-        resources = []
-        for resource_group in resource_groups:
-            await progress_broker.publish(
-                request.analysis_id, f"Scanning resources in {resource_group}..."
+        job = await agent_store.create_job(
+            auth.user_id,
+            request.connection_id,
+            "cloud_cost_analysis",
+            {"project_id": request.project_id, "analysis_id": str(request.analysis_id)},
+        )
+        job_id = UUID(job["id"])
+        result_future = agent_connections.expect_result(job_id)
+        if not await agent_connections.dispatch(job):
+            agent_connections.forget_result(job_id)
+            raise HTTPException(status_code=409, detail="The Google Cloud connector disconnected")
+        try:
+            result = await asyncio.wait_for(result_future, timeout=180)
+        except TimeoutError as exc:
+            agent_connections.forget_result(job_id)
+            raise HTTPException(status_code=504, detail="The Google Cloud inventory scan timed out") from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        raw_resources = result.get("resources")
+        if not isinstance(raw_resources, list):
+            raise HTTPException(status_code=502, detail="The cloud connector returned invalid inventory")
+        resources = [item for item in raw_resources if isinstance(item, dict)]
+    else:
+        try:
+            resource_groups = (
+                [request.resource_group]
+                if request.resource_group
+                else await run_in_threadpool(scanner.resource_groups)
             )
-            resources.extend(await run_in_threadpool(scanner.scan, resource_group))
-    except CloudScannerError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+            resources = []
+            for resource_group in resource_groups:
+                await progress_broker.publish(
+                    request.analysis_id, f"Scanning resources in {resource_group}..."
+                )
+                resources.extend(await run_in_threadpool(scanner.scan, resource_group))
+        except CloudScannerError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     try:
         await progress_broker.publish(request.analysis_id, "Analyzing costs with AI...")
@@ -76,14 +117,22 @@ async def get_analysis_history(
 
 @router.get("/resource-groups")
 async def get_resource_groups(
-    scanner: Annotated[CloudScanner, Depends(get_cloud_scanner)],
-    _: Annotated[AuthContext, Depends(require_auth_context)],
-) -> dict[str, list[str]]:
-    try:
-        resource_groups = await run_in_threadpool(scanner.resource_groups)
-    except CloudScannerError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
-    return {"resource_groups": resource_groups}
+    auth: Annotated[AuthContext, Depends(require_auth_context)],
+    agent_store: Annotated[ClusterAgentStore, Depends(get_cluster_agent_store)],
+) -> dict[str, list]:
+    del auth
+    connections = await agent_store.list_clusters("gcp")
+    projects = []
+    for connection in connections:
+        for project in connection.get("metadata", {}).get("projects", []):
+            if project.get("project_id"):
+                projects.append({
+                    "connection_id": connection["id"],
+                    "project_id": project["project_id"],
+                    "display_name": project.get("display_name") or project["project_id"],
+                    "status": connection["status"],
+                })
+    return {"resource_groups": [item["project_id"] for item in projects], "projects": projects}
 
 
 @progress_router.websocket("/ws/progress/{analysis_id}")

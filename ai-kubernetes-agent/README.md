@@ -122,6 +122,19 @@ InsForge-configured OpenRouter gateway. `COST_ANALYSIS_MODEL` defaults to
 `CLOUD_SCAN_TIMEOUT_SECONDS` controls the inventory timeout. The
 returned commands are recommendations for human review and are never executed.
 
+### Connect a user's Google Cloud account
+
+Public users should use **Cost Analyzer → Connect cloud** instead of placing Google credentials on the hosted backend. The page creates a 15-minute, single-use pairing token and a command that runs the GCP connector beside the user's existing `gcloud` session. The connector lists accessible projects and executes read-only Cloud Asset Inventory scans over an outbound authenticated WebSocket. OAuth tokens, service-account keys, and Application Default Credentials never leave the user's environment.
+
+Before starting the connector:
+
+```bash
+gcloud auth login
+gcloud services enable cloudasset.googleapis.com --project PROJECT_ID
+```
+
+The active Google identity needs `roles/cloudasset.viewer` and `roles/serviceusage.serviceUsageConsumer` on each project it should scan. Keep the connector running while an analysis is in progress. The Cost Analyzer project dropdown updates when the connector publishes its accessible projects.
+
 Authenticated cloud analysis clients may generate a UUID, connect to
 `ws://localhost:8000/ws/progress/<analysis-id>`, and send that UUID as `analysis_id`
 to `POST /api/analyze`. The socket receives stage messages through completion. Past

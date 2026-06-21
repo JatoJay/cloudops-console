@@ -37,10 +37,20 @@ export type AnalysisHistoryItem = {
   created_at: string;
 };
 
-export type ResourceGroupsResponse = { resource_groups: string[] };
+export type CloudProjectOption = {
+  connection_id: string;
+  project_id: string;
+  display_name: string;
+  status: string;
+};
+
+export type ResourceGroupsResponse = {
+  resource_groups: string[];
+  projects: CloudProjectOption[];
+};
 
 export const analysisProgressSteps = [
-  "Fetching resource groups...",
+  "Fetching cloud projects...",
   "Scanning resources",
   "Analyzing costs with AI...",
   "Storing results...",
