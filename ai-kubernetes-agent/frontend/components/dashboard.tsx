@@ -1,8 +1,7 @@
 "use client";
 
-import { ArrowLeft, ChartLineUp, CheckCircle, ClockCounterClockwise, House, PlugsConnected, ShieldWarning, SignOut, WarningCircle } from "@phosphor-icons/react";
+import { ArrowLeft, CheckCircle, ShieldWarning, WarningCircle } from "@phosphor-icons/react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { DiagnosisCard } from "@/components/diagnosis-card";
@@ -13,42 +12,17 @@ import { useInvestigation } from "@/hooks/use-investigation";
 import { useVulnerabilityScan } from "@/hooks/use-vulnerability-scan";
 import { InvestigationApiError } from "@/services/investigations";
 
-export function Dashboard({ user }: { user: { id: string; email?: string | null } }) {
-  const router = useRouter();
+export function Dashboard({ userId }: { userId: string }) {
   const [selectedContext, setSelectedContext] = useState("");
-  const { currentStep, activeContext, clusters, investigation } = useInvestigation(user.id, selectedContext);
+  const { currentStep, activeContext, clusters, investigation } = useInvestigation(userId, selectedContext);
   const vulnerabilityScan = useVulnerabilityScan(activeContext);
 
   const investigationError = investigation.error instanceof InvestigationApiError
     ? investigation.error
     : null;
 
-  async function signOut() {
-    await fetch("/api/auth/sign-out", { method: "POST" });
-    router.refresh();
-  }
-
   return (
-    <main className="console-shell min-h-screen bg-canvas text-ink">
-      <header className="sticky top-0 z-20 flex h-20 items-center justify-between border-b border-line bg-canvas/90 px-3 backdrop-blur sm:px-8 lg:px-12">
-        <div className="flex items-center gap-4">
-          <Link href="/kubernetes" className="text-lg font-extrabold tracking-[-0.04em] sm:text-xl"><span className="sm:hidden">K8s</span><span className="hidden sm:inline">Kubernetes Troubleshooter</span></Link>
-          <nav className="flex items-center gap-1 border-l border-line pl-3" aria-label="Kubernetes navigation">
-            <Link href="/" className="inline-flex min-h-10 items-center gap-2 px-2 text-sm font-bold text-muted transition hover:bg-white hover:text-action sm:px-3"><House size={17} /><span className="hidden md:inline">Main dashboard</span></Link>
-            <Link href="/cost-analysis" className="inline-flex min-h-10 items-center gap-2 px-2 text-sm font-bold text-muted transition hover:bg-white hover:text-action sm:px-3"><ChartLineUp size={17} /><span className="hidden md:inline">Cost Analyzer</span></Link>
-            <Link href="/kubernetes/history" className="inline-flex min-h-10 items-center gap-2 px-2 text-sm font-bold text-muted transition hover:bg-white hover:text-action sm:px-3"><ClockCounterClockwise size={17} /><span className="hidden md:inline">History</span></Link>
-            <Link href="/kubernetes/connect" className="inline-flex min-h-10 items-center gap-2 px-2 text-sm font-bold text-muted transition hover:bg-white hover:text-action sm:px-3"><PlugsConnected size={17} /><span className="hidden md:inline">Connect</span></Link>
-          </nav>
-        </div>
-        <div className="flex items-center gap-4 sm:gap-7">
-          <span className="hidden text-sm text-muted lg:block">{user.email}</span>
-          <button type="button" onClick={signOut} className="inline-flex items-center gap-2 text-sm font-bold text-ink hover:text-action focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-action">
-            <SignOut size={18} /><span className="hidden lg:inline">Sign out</span>
-          </button>
-        </div>
-      </header>
-
-      <div className="mx-auto max-w-7xl px-5 py-9 sm:px-8 lg:px-12 lg:py-12">
+    <div className="mx-auto max-w-7xl px-5 py-9 sm:px-8 lg:px-12 lg:py-12">
         <Link href="/" className="mb-7 inline-flex items-center gap-2 text-sm font-bold text-muted transition hover:text-action"><ArrowLeft size={17} /> Back to tools</Link>
         <section className="grid gap-8 border-b border-line pb-10 lg:grid-cols-[1fr_360px] lg:gap-16">
           <div className="flex flex-col justify-center">
@@ -133,7 +107,6 @@ export function Dashboard({ user }: { user: { id: string; email?: string | null 
             <Link href="/kubernetes/history" className="mt-4 inline-flex min-h-11 items-center gap-2 border border-line px-4 text-sm font-bold text-ink transition hover:border-action hover:text-action sm:mt-0">View Kubernetes history <ArrowLeft size={16} className="rotate-180" /></Link>
           </section>
         </div>
-      </div>
-    </main>
+    </div>
   );
 }

@@ -1,3 +1,4 @@
+import { AppShell } from "@/components/app-shell";
 import { Dashboard } from "@/components/dashboard";
 import { LoginScreen } from "@/components/login-screen";
 import { createInsForgeServerClient } from "@/lib/insforge/server";
@@ -8,5 +9,9 @@ export default async function KubernetesPage() {
   const user = data?.user;
 
   if (!user) return <LoginScreen />;
-  return <Dashboard user={{ id: user.id, email: user.email }} />;
+  return (
+    <AppShell user={{ email: user.email }}>
+      <Dashboard userId={user.id} />
+    </AppShell>
+  );
 }
